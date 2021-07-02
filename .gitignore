@@ -1,0 +1,9 @@
+venv/
+output/
+*.pyc
+*.h264
+*.h265
+*.mp4
+depthai-core/
+depthai-python/
+depthai*-install/
