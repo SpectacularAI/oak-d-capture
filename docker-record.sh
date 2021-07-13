@@ -6,5 +6,5 @@ docker run --rm --privileged \
 	-e DISPLAY=$DISPLAY \
 	-v /tmp/.X11-unix:/tmp/.X11-unix \
 	-v `pwd`:/host \
-	luxonis/depthai-library:latest \
+	luxonis/depthai-library:v2.6.0.0 \
 	python3 /host/record.py -o /host/output $@
