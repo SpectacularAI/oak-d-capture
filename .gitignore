@@ -7,3 +7,4 @@ output/
 depthai-core/
 depthai-python/
 depthai*-install/
+tmp/
