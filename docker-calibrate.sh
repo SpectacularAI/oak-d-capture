@@ -14,7 +14,7 @@ set -eu -o pipefail
 CAM_MODEL=pinhole-radtan
 tmp_dir=tmp
 DOCKER_KALIBR_RUN="docker run -v `pwd`/$tmp_dir:/kalibr -it stereolabs/kalibr:kinetic"
-DOCKER_DEPTHAI_RUN="docker run -v `pwd`/$tmp_dir:/kalibr -it spectacularai/depthai-library:1.0"
+DOCKER_DEPTHAI_RUN="docker run -v `pwd`/$tmp_dir:/kalibr -it ghcr.io/spectacularai/depthai-library:1.0"
 APRIL_GRID=$2
 
 rm -rf tmp
