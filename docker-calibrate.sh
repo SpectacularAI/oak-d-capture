@@ -25,7 +25,8 @@ DOCKER_KALIBR_RUN="docker run -v `pwd`/$tmp_dir:/kalibr -it stereolabs/kalibr:ki
 DOCKER_DEPTHAI_RUN="docker run -v `pwd`/$tmp_dir:/kalibr -it ghcr.io/spectacularai/kalibr-conversion:1.0"
 APRIL_GRID=$1
 
-rm -rf tmp
+# must clear using docker to avoid permission issues
+docker run -v `pwd`:/cur -it stereolabs/kalibr:kinetic rm -rf /cur/tmp
 mkdir -p tmp/allan
 cp -R $RECORDING $tmp_dir/camera_calibration_raw
 
