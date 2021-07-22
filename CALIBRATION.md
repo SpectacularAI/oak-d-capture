@@ -17,10 +17,14 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 The recording session will be store in `output/<date>` folder, you can check that it looks good before moving forward.
 
-4. Next you need to have the ruler at hand an measure the full width of the apriltag grid, this means the length of 6 tags plus 7 smaller solid squares in centimeters. Use following command to start the calibration, give your recorded session as first parameter and the measurement (cm) as second. The calibration will take several minutes to complete.
+4. Next you need to have the ruler at hand an measure the full width of the apriltag grid, this means the length of 6 tags plus 7 smaller solid squares in centimeters.
+
+![Measuring calibration target example](./measuring_calibration_target.jpg?raw=true)
+
+5. Use following command to start the calibration, give the measurement in cm as a parameter. The calibration will take several minutes to complete.
 ```
-# For example ./calibrate.sh output/2021-07-13T135814/ 66.5
-./docker-calibrate.sh output/<date>/ <cm>
+# For example ./calibrate.sh 20.5
+./docker-calibrate.sh <cm>
 ```
 
-5. You are done! Your calibratation results are in `./tmp/camera_calibration_raw/calibration.json` file!
+6. You are done! Your calibratation results are in `./tmp/camera_calibration_raw/calibration.json` file!

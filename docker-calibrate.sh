@@ -9,17 +9,25 @@
 
 #!/bin/bash
 
+if [ "$2" ]; then
+    RECORDING=$2
+else
+    RECORDING="output/$(ls -t output/ | head -1)"
+fi
+
+echo "Using latest recording for calibration (give 2nd argument to override): ${RECORDING}"
+
 set -eu -o pipefail
 
 CAM_MODEL=pinhole-radtan
 tmp_dir=tmp
 DOCKER_KALIBR_RUN="docker run -v `pwd`/$tmp_dir:/kalibr -it stereolabs/kalibr:kinetic"
 DOCKER_DEPTHAI_RUN="docker run -v `pwd`/$tmp_dir:/kalibr -it ghcr.io/spectacularai/kalibr-conversion:1.0"
-APRIL_GRID=$2
+APRIL_GRID=$1
 
 rm -rf tmp
 mkdir -p tmp/allan
-cp -R "$1" $tmp_dir/camera_calibration_raw
+cp -R $RECORDING $tmp_dir/camera_calibration_raw
 
 aprilTag=$(LC_NUMERIC="C" awk "BEGIN {printf \"%.8f\",${APRIL_GRID}/810.0}") # cm -> m and divide by 8.1
 printf "target_type: 'aprilgrid'
@@ -52,3 +60,7 @@ $DOCKER_KALIBR_RUN bash -c "cd kalibr && kalibr_calibrate_imu_camera --bag data.
     --dont-show-report"
 set -e
 $DOCKER_DEPTHAI_RUN python3 /scripts/kalibr-to-calibration.py /kalibr/camchain-imucam-data.yaml -output /kalibr/camera_calibration_raw/
+
+echo ""
+echo "Calibration completed!"
+echo "Calibration file: ./tmp/camera_calibration_raw/calibration.json"
