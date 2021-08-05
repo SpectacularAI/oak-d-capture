@@ -7,7 +7,6 @@ See the file NOTICE for copyright and license information.
 """
 import depthai as dai
 import json, os, sys
-import sync
 
 COLOR_RESOLUTIONS = {
     'THE_1080_P': (1920, 1080),
@@ -97,7 +96,7 @@ class Camera:
             os.remove(self.fullStreamFilePath)
 
 class Imu:
-    def __init__(self, imu_sync, pipeline, imu_freq, imu_report_batch, imu_max_batch, imu_type):
+    def __init__(self, pipeline, imu_freq, imu_report_batch, imu_max_batch, imu_type):
         # Define sources and outputs
         imu = pipeline.createIMU()
         xlinkOut = pipeline.createXLinkOut()
@@ -116,39 +115,23 @@ class Imu:
         imu.out.link(xlinkOut.input)
 
         self.imu = imu # necessary?
-        self.imuSync = imuSync
 
     def setupOutputQueue(self, dev):
         # Output queue for imu bulk packets
         self.outputQueue = dev.getOutputQueue(name="imu", maxSize=50, blocking=False)
 
-    def poll(self, jsonlOut, t0, outputExt=False, outputOther=True):
+    def poll(self, jsonlOut, t0):
         def writeSensor(sample, name):
             if t0 is None: return
-            if outputExt: name = name + 'Internal'
             t = sample.timestamp.get().total_seconds() - t0
             vals = [sample.x, sample.y, sample.z]
-            extImus = self.imuSync.pushSensor(t, name, vals)
-            if imuSync.ready():
-                if outputOther or not outputExt:
-                    jsonlOut.write(json.dumps({
-                        'time': t,
-                        'sensor': {
-                            'type': name,
-                            'values': vals
-                        }
-                    })+'\n')
-                if outputOther or ouputExt:
-                    for (tExt, nExt, valsExt) in extImus:
-                        nameOut = nExt
-                        if not outputExt: nameOut = nameOut + 'External'
-                        jsonlOut.write(json.dumps({
-                            'time': tExt,
-                            'sensor': {
-                                'type': nameOut,
-                                'values': valsExt
-                            }
-                        })+'\n')
+            jsonlOut.write(json.dumps({
+                'time': t,
+                'sensor': {
+                    'type': name,
+                    'values': vals
+                }
+            })+'\n')
 
         while self.outputQueue.has():
             for imuPacket in self.outputQueue.get().packets:
@@ -205,8 +188,7 @@ def manualFocus(controlQueue, focus):
     ctrl.setManualFocus(focus)
     controlQueue.send(ctrl)
 
-def record(imu_sync, use_external_imu,
-    output_root_folder,
+def record(output_root_folder,
     gray_fps, color_fps,
     gray_focus, color_focus,
     mono, color,
@@ -233,7 +215,7 @@ def record(imu_sync, use_external_imu,
         imu = None
         print('No IMU')
     else:
-        imu = Imu(imu_sync, pipeline, imu_freq, imu_report_batch, imu_max_batch, imu_type)
+        imu = Imu(pipeline, imu_freq, imu_report_batch, imu_max_batch, imu_type)
 
     cameras = []
 
@@ -274,7 +256,7 @@ def record(imu_sync, use_external_imu,
         grayControlQueue = dev.getInputQueue('controlGray')
         colorControlQueue = dev.getInputQueue('controlColor')
         try:
-            closeList = imu_sync.getCloseables()
+            closeList = []
 
             dev.startPipeline()
             print("Press Ctrl+C to stop...")
@@ -306,7 +288,7 @@ def record(imu_sync, use_external_imu,
 
             storedFrameNumber = 1
             while True:
-                if imu is not None: imu.poll(jsonlOut, t0, outputExt=use_external_imu, outputOther=not discard_other_imu)
+                if imu is not None: imu.poll(jsonlOut, t0)
                 for cameraSet, synchronizer in inputs:
                     for idx, camera in enumerate(cameraSet):
                         q = camera.outputQueue
@@ -342,9 +324,6 @@ def record(imu_sync, use_external_imu,
                         }
                         meta.append(d)
 
-                        if 've1' in camera.streamName: # a bit hacky
-                            imu_sync.pushFrame(d['time'], frame)
-
                     if not preview:
                         jsonlOut.write(json.dumps({
                             'time': meta[0]['time'],
@@ -364,7 +343,7 @@ def record(imu_sync, use_external_imu,
 
 if __name__ == '__main__':
     import argparse
-    p = argparse.ArgumentParser(__doc__.strip() + '\n', epilog='see also: python sync.py --help')
+    p = argparse.ArgumentParser(__doc__.strip() + '\n')
     p.add_argument('--color', action='store_true',
         help='record also color video (as camera 3) or if mono=True, record only color video as camera 1')
     p.add_argument('--mono', action='store_true')
@@ -388,8 +367,6 @@ if __name__ == '__main__':
     p.add_argument('--discard_other_imu', action='store_true')
     p.add_argument('--preview_imu', action='store_true', help='Print IMU data to stdout in --preview')
     p.add_argument('--sort', action='store_true', help='sort JSONL output (can help with ext IMUs)')
-    sync_args, others = sync.parse_known()
-    imuSync = sync.ImuSyncrhonizer(**vars(sync_args))
-    args = p.parse_args(others)
+    args = p.parse_args()
 
-    record(imuSync, sync_args.external_imu_file is not None, **vars(args))
+    record(**vars(args))
