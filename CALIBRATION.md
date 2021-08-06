@@ -10,14 +10,13 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 
 2. Download calibration target from [Kalibr](https://github.com/ethz-asl/kalibr/wiki/downloads), direct G-Drive link: https://drive.google.com/file/d/0B0T1sizOvRsUdjFJem9mQXdiMTQ/edit?usp=sharing. Put this in full screen mode on your screen.
 
-
-3. Record a video session where you move the OAK-D device in 6 degrees of freedom at moderate speed to avoid motion blur while having the target in full sight of the cameras. To start the recording, use command below to start and CTRL+C to stop recording.
+3. Record a video session where you move the OAK-D device in 6 degrees of freedom at moderate speed to avoid motion blur while having the target in full sight of the cameras. Record for about 30 seconds from a distances of 0.5 - 1 meters. To start the recording, use command below to start and CTRL+C to stop recording.
 ```
 ./docker-record.sh
 ```
 The recording session will be store in `output/<date>` folder, you can check that it looks good before moving forward.
 
-4. Next you need to have the ruler at hand an measure the full width of the apriltag grid, this means the length of 6 tags plus 7 smaller solid squares in centimeters.
+4. Next you need to have the ruler at hand an measure the full width of the AprilTag grid, this means the length of 6 tags plus 7 smaller solid squares in centimeters.
 
 ![Measuring calibration target example](./measuring_calibration_target.jpg?raw=true)
 
