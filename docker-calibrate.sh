@@ -1,13 +1,10 @@
 #!/bin/bash
 # Usage:
 #
-#   ./calibrate.sh recording-folder aprilgrid-in-cm
+#   ./calibrate.sh aprilgrid-in-cm recording-folder
 #
 # where the folder should contain the files data.jsonl, data.???. data2.???,
 # that represent a sequence where a calibration pattern is filmed appropriately.
-
-
-#!/bin/bash
 
 if [ "$2" ]; then
     RECORDING=$2
@@ -22,7 +19,7 @@ set -eu -o pipefail
 CAM_MODEL=pinhole-radtan
 tmp_dir=tmp
 DOCKER_KALIBR_RUN="docker run -v `pwd`/$tmp_dir:/kalibr -it stereolabs/kalibr:kinetic"
-DOCKER_DEPTHAI_RUN="docker run -v `pwd`/$tmp_dir:/kalibr -it ghcr.io/spectacularai/kalibr-conversion:1.0"
+DOCKER_OURS_RUN="docker run -v `pwd`/$tmp_dir:/kalibr -it ghcr.io/spectacularai/kalibr-conversion:1.0"
 APRIL_GRID=$1
 
 # must clear using docker to avoid permission issues
@@ -37,7 +34,7 @@ tagRows: 6
 tagSize: ${aprilTag}
 tagSpacing: 0.3" >> $tmp_dir/april_6x6_80x80cm.yaml
 
-# TODO: These are probably not correct?
+# May have some (limited) effect on IMU-camera calibration
 printf "accelerometer_noise_density: 0.00074562202949377
 accelerometer_random_walk: 0.0011061605306550387
 gyroscope_noise_density: 3.115084637301622e-05
@@ -46,7 +43,7 @@ rostopic: /imu0
 update_rate: 600
 " >> $tmp_dir/allan/imu.yaml
 
-$DOCKER_DEPTHAI_RUN python3 /scripts/jsonl-to-kalibr.py /kalibr/camera_calibration_raw -output /kalibr/converted/
+$DOCKER_OURS_RUN python3 /scripts/jsonl-to-kalibr.py /kalibr/camera_calibration_raw -output /kalibr/converted/
 $DOCKER_KALIBR_RUN kalibr_bagcreater --folder /kalibr/converted --output-bag /kalibr/data.bag
 set +e
 $DOCKER_KALIBR_RUN bash -c "cd /kalibr && kalibr_calibrate_cameras --bag data.bag \
@@ -60,7 +57,7 @@ $DOCKER_KALIBR_RUN bash -c "cd kalibr && kalibr_calibrate_imu_camera --bag data.
     --imu allan/imu.yaml  \
     --dont-show-report"
 set -e
-$DOCKER_DEPTHAI_RUN python3 /scripts/kalibr-to-calibration.py /kalibr/camchain-imucam-data.yaml -output /kalibr/camera_calibration_raw/
+$DOCKER_OURS_RUN python3 /scripts/kalibr-to-calibration.py /kalibr/camchain-imucam-data.yaml -output /kalibr/camera_calibration_raw/
 
 echo ""
 echo "Calibration completed!"
